@@ -1,10 +1,21 @@
 import { BeatmapsetCard } from "@/components/ui/beatmap-card";
-import { SearchFilter } from "@/components/ui/search-filter";
+import {
+    BeatmapSetList,
+    BeatmapSetListFallback,
+} from "@/components/ui/beatmapset-list";
+import { Filter, Search } from "@/components/ui/search-filter";
 import { osu } from "@/lib";
 import { Categories } from "@/types";
-import { Divider, Group, Select, SimpleGrid } from "@mantine/core";
-import { notFound } from "next/navigation";
+import {
+    Center,
+    Divider,
+    Group,
+    Select,
+    SimpleGrid,
+    Text,
+} from "@mantine/core";
 import { Beatmap, Ruleset } from "osu-api-v2-js";
+import { Suspense } from "react";
 
 type searchParams = Promise<{
     q: string;
@@ -21,40 +32,36 @@ type searchParams = Promise<{
         | "updated";
 }>;
 
-export default async function BeatmapSetsPage({
-    searchParams,
-}: {
+export default async function BeatmapSetsPage(props: {
     searchParams: searchParams;
 }) {
-    const { q, categories, mode, sortBy } = await searchParams;
-    const { total, beatmapsets } = await osu.searchBeatmapsets({
-        keywords: q,
-        categories,
-        mode: Ruleset[mode],
-        sort: { by: sortBy, in: "desc" },
-    });
+    const searchParams = await props.searchParams;
 
-    if (total === 0) return notFound();
+    const q = searchParams?.q || "";
+    const categories = searchParams.categories;
+    const mode = searchParams.mode;
+    const sortBy = searchParams.sortBy;
 
     return (
         <>
-            <SearchFilter
+            <Search />
+            <Filter
                 initialValues={{
                     categories,
                     defaultSearchString: q,
                     gameMode: mode,
-                    sortBy,
                 }}
             />
-            <Group w="100%">
-                <Divider label="Beatmapsets" flex={1} />
-                <Select data={["meow"]} />
-            </Group>
-            <SimpleGrid cols={{ sm: 1, md: 2, lg: 3 }}>
-                {beatmapsets.map((b) => (
-                    <BeatmapsetCard key={b.id} beatmapset={b} />
-                ))}
-            </SimpleGrid>
+            <Suspense key={q + sortBy} fallback={<BeatmapSetListFallback />}>
+                <BeatmapSetList
+                    filter={{
+                        keywords: q,
+                        categories,
+                        mode: Ruleset[mode],
+                        sort: { by: sortBy, in: "desc" },
+                    }}
+                />
+            </Suspense>
         </>
     );
 }

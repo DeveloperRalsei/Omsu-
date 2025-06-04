@@ -1,14 +1,4 @@
-"use client";
-import { nprogress } from "@mantine/nprogress";
-import { useEffect } from "react";
-
+import { BeatmapSetListFallback } from "@/components/ui/beatmapset-list";
 export default function Loading() {
-    useEffect(() => {
-        nprogress.start();
-        return () => {
-            nprogress.complete();
-        };
-    }, []);
-
-    return null;
+    return <BeatmapSetListFallback />;
 }

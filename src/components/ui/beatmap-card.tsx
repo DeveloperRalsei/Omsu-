@@ -7,15 +7,25 @@ import {
     Text,
     Stack,
     Flex,
-    Box,
-    Indicator,
     Group,
     Badge,
     ThemeIcon,
     Tooltip,
+    Box,
+    ActionIcon,
+    Loader,
+    useMantineTheme,
 } from "@mantine/core";
-import { IconExclamationMark, IconHeart, IconVideo } from "@tabler/icons-react";
+import {
+    IconExclamationMark,
+    IconHeart,
+    IconPlayerPause,
+    IconPlayerPlay,
+    IconVideo,
+    IconX,
+} from "@tabler/icons-react";
 import { Beatmapset } from "osu-api-v2-js";
+import { useMusic } from "../hooks/music";
 
 const CategoryColors = {
     Loved: "pink",
@@ -54,12 +64,15 @@ export const BeatmapsetCard = ({
 
     return (
         <Card shadow="sm" padding="md" radius="md" withBorder pos="relative">
-            <Card.Section>
+            <Card.Section pos="relative">
                 <Image
                     src={beatmapset.covers.card}
                     height={140}
-                    alt={beatmapset.title_unicode ?? beatmapset.title}
+                    alt={beatmapset.title_unicode || beatmapset.title}
                 />
+                <Group pos="absolute" bottom={0} bg="rgba(0,0,0,.5)" w="100%">
+                    <PreviewPlayer preview_url={beatmapset.preview_url} />
+                </Group>
             </Card.Section>
 
             <Stack gap="xs" mt="sm">
@@ -107,12 +120,60 @@ export const BeatmapsetCard = ({
     );
 };
 
+const PreviewPlayer = ({
+    preview_url,
+}: {
+    preview_url: Beatmapset["preview_url"];
+}) => {
+    const { loading, play, pause, playing, error, progress, init } = useMusic(
+        preview_url,
+        true,
+    );
+    const { primaryColor } = useMantineTheme();
+
+    return (
+        <Group gap={4} wrap="nowrap" w="100%">
+            <ActionIcon
+                disabled={!!error}
+                variant="transparent"
+                size="sm"
+                onClick={() => {
+                    if (!playing) init();
+                    playing ? pause() : play();
+                }}
+            >
+                {loading ? (
+                    <Loader size={16} />
+                ) : error ? (
+                    <IconX size={16} />
+                ) : playing ? (
+                    <IconPlayerPause size={16} />
+                ) : (
+                    <IconPlayerPlay size={16} />
+                )}
+            </ActionIcon>
+
+            <Box pos="relative" w="100%">
+                <Box w="100%" bg="dark" h={2} pos="absolute" top={0} />
+                <Box
+                    w={`${progress * 100}%`}
+                    bg={primaryColor}
+                    h={4}
+                    pos="absolute"
+                    top={0}
+                />
+            </Box>
+        </Group>
+    );
+};
+
 const modeName: Record<GameMode, string> = {
     fruits: "Catch",
     osu: "Osu",
     taiko: "Taiko",
     mania: "Mania",
 };
+
 function getGameIcon(mode: GameMode) {
     return (
         <Tooltip label={modeName[mode]} withArrow>
